@@ -71,19 +71,20 @@
 					$("#search_results").slideUp();
 					var btn = $("#search_button").click(function(){ /* 検索ボタンをクリックした場合 */
 						btn.button('loading');
-						ajax_search();
+						ajax_search(btn);
 						});
 					});
 
-function ajax_search(){
-	$("#search_results").show();
-	var search_val=$("#search_term").val();
-	$.post("./response.php", {search_term : search_val}, function(data){ 
-			if (data.length > 0){
-			$("#search_results").html(data);
+			function ajax_search(btn){
+				$("#search_results").show();
+				var search_val=$("#search_term").val();
+				$.post("./response.php", {search_term : search_val}, function(data){ 
+					if (data.length > 0){
+						$("#search_results").html(data);
+					}
+					btn.button('reset');
+					})
 			}
-			})
-}
 </script>
 
 <!-- Le fav and touch icons -->
@@ -139,7 +140,7 @@ function ajax_search(){
 					<div class="span10">
 						<form id="searchform" method="post">
 							<input class="xlarge" name="search_term" id="search_term" size="30" type="text" placeholder="URLを入力してください">
-							<button class="btn primary" data-loading-text="調査中" id="search_button" >調べる</button>
+							<button class="btn primary" data-loading-text="調査中" data-complete-text="調べる" id="search_button" >調べる</button>
 						</form>
 
 						<span class="help-block">
