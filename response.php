@@ -31,21 +31,25 @@ array_multisort($like_count, SORT_DESC, $fql_query_obj);
 
 $ranking = array_slice($fql_query_obj, 0, $limit);
 
-$string	 = '<tr>';
-$string	.= '<th>like数</th>';
-$string	.= '<th>タイトル</th>';
-$string	.= '</tr>';
+$string	 = "<tr>\n";
+$string	.= "<th>like数</th>\n";
+$string	.= "<th>タイトル</th>\n";
+$string	.= "</tr>\n";
 
 foreach ($ranking as &$val) {
+
+	if ($val['like_count'] == 0) continue;
+
 	$val['title'] = getPageTitle($val['url']);
 
 	$string .= "<tr>";
 	$string .= "<td>".$val['like_count']."</td>\n";
 	$string .= '<td><a href="'.$val['url'].'" target="_blank">'.$val['title']."</a></td>\n";
 	$string .= "</tr>\n";
-}
-echo $string;
 
+}
+
+echo $string;
 
 function getPageTitle( $url ) {
 	$html = file_get_contents($url); 
