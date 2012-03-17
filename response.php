@@ -11,36 +11,44 @@ $limit			= 20;
 if (!isValidURL($google_xml_url)) die ('Please enter the URL');
 //if (!isValidXml($google_xml_url)) die ('Please supply the xml');
 
-// urlのリストを作成する
-$xml			= simplexml_load_file($google_xml_url);
+$hash_key = md5($google_xml_url);
 
-foreach($xml->url as $data){
+if (($ranking = apc_fetch($hash_key)) == false) {
 
-	if (is_object($data->loc)) {
-		$url = (string) $data->loc;
-	} else {
-		$url = $data->loc;
+	// urlのリストを作成する
+	$xml			= simplexml_load_file($google_xml_url);
+
+	foreach($xml->url as $data){
+
+		if (is_object($data->loc)) {
+			$url = (string) $data->loc;
+		} else {
+			$url = $data->loc;
+		}
+
+		// fqlを作成する
+		$fql			= 'SELECT url, like_count FROM link_stat WHERE url IN " ' . $url .'"';
+		$fql_query_url	= "https://api.facebook.com/method/fql.query?format=json&query=".urlencode($fql);
+
+		$urls[] = $fql_query_url;
 	}
 
-	// fqlを作成する
-	$fql			= 'SELECT url, like_count FROM link_stat WHERE url IN " ' . $url .'"';
-	$fql_query_url	= "https://api.facebook.com/method/fql.query?format=json&query=".urlencode($fql);
+	$fql_query_obj = getMultiContents($urls, 20);
+	//$fql_query_obj		= json_decode($fql_query_result, true);
 
-	$urls[] = $fql_query_url;
-}
+	if (empty($fql_query_obj)) die('not found');
 
-$fql_query_obj = getMultiContents($urls, 20);
-//$fql_query_obj		= json_decode($fql_query_result, true);
+	foreach ($fql_query_obj as $key => $row) {
+		$like_count[$key] = $row['like_count'];
+	}
 
-if (empty($fql_query_obj)) die('not found');
+	array_multisort($like_count, SORT_DESC, $fql_query_obj);
 
-foreach ($fql_query_obj as $key => $row) {
-	$like_count[$key] = $row['like_count'];
-}
+	$ranking = array_slice($fql_query_obj, 0, $limit);
 
-array_multisort($like_count, SORT_DESC, $fql_query_obj);
+	apc_store($hash_key, $ranking);
+} 
 
-$ranking = array_slice($fql_query_obj, 0, $limit);
 
 $string	 = "<tr>\n";
 $string	.= "<th>title</th>\n";
